@@ -2,7 +2,6 @@ import streamlit as st
 import os
 import pandas
 from dotenv import load_dotenv
-from streamlit_extras.add_vertical_space import add_vertical_space
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -22,7 +21,6 @@ with st.sidebar:
     - [LangChain](https://python.langchain.com/)
     - [OpenAI](https://platform.openai.com/docs/models) LLM model 
     ''')
-    add_vertical_space(5)
     st.write('Made by Zuyao')
 
 def main():
