@@ -63,8 +63,8 @@ def main():
         embeddings = OpenAIEmbeddings()
         VectorStore = FAISS.from_texts(chunks, embedding=embeddings)
 
-        #Accept user questions
-        query = st.text_input("Ask question about your PDF file:")
+        # Accept user questions/query
+        query = st.text_input("Ask questions about your file:")
 
         if query:
             k = 10  # Number of nearest neighbors to retrieve
@@ -78,6 +78,7 @@ def main():
             response = chain.run(input_documents=docs, question=query)
             st.divider()
             st.subheader("Answer: ")
+
             st.write(response)
             st.divider()
 
