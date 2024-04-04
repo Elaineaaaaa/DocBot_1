@@ -1,36 +1,29 @@
-
-import os
 import streamlit as st
+import os
 import pandas
 from PyPDF2 import PdfReader
-from langchain.chat_models import ChatOpenAI
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
-from langchain.document_loaders.csv_loader import CSVLoader
-from langchain.callbacks import get_openai_callback
+from langchain.llms import OpenAI
 from langchain.chains.question_answering import load_qa_chain
+from langchain.chat_models import ChatOpenAI
+from langchain.document_loaders.csv_loader import CSVLoader
 
-
+# Sidebar contents
 with st.sidebar:
-    with st.expander("⚠️ Don't have an OpenAI key?", expanded=True):
-        st.write("To get an OpenAI key do the following:")
-        st.markdown("- Go to *openai.com* and Log in with your account.")
-        st.markdown(
-            "- You'll get three options to choose from, choose *API* section.")
-        st.markdown(
-            "- You'll be redirected to *OpenAI Platform*")
-        st.markdown(
-            "- Here on the top-right corner, tap on your profile and choose *Manage Account* ")
-        st.markdown(
-            "- In the *API Keys* section, you can create a new secret key, that'll be your API key")
-
-        st.info(
-            "Note that, if your free usage limit has expired, you will need to buy OpenAI credits", icon="🚨")
-
+    st.title('DocBot')
+    st.markdown('''
+    ## About
+    This app is an LLM-powered chatbot, you can ask questions regarding your loaded files.
+    - [Streamlit](https://streamlit.io/)
+    - [LangChain](https://python.langchain.com/)
+    - [OpenAI](https://platform.openai.com/docs/models) LLM model 
+    ''')
+    st.write('Made by Zuyao')
 
 def main():
-    st.title("DocBot - Chat with your Files🦜")
+    st.header("DocBot - Chat with your Files")
     openaikey = None
     openaikey = st.text_input("Your OpenAI API key: ", type="password")
     os.environ["OPENAI_API_KEY"] = openaikey
@@ -38,15 +31,12 @@ def main():
         visible = True
     else:
         visible = False
-    uploadedFiles = st.file_uploader("Upload your files.",
-                                     type=['pdf', '.csv', '.xlsx', '.xls', '.docx'], accept_multiple_files=True, disabled=visible)
-
-    # upload a PDF file
-
+    uploadedFiles = st.file_uploader("Upload your files", type=['pdf','csv','xlsx','.xls'], accept_multiple_files = True, disabled=visible)
+    # Upload file
     text = ""
     for file in uploadedFiles:
         extension = file.name[len(file.name)-3:]
-        if(extension == "pdf"):
+        if(extension == 'pdf'):
             file_reader = PdfReader(file)
             for page in file_reader.pages:
                 text += page.extract_text()
@@ -58,26 +48,23 @@ def main():
             file_reader = pandas.read_excel(file)
             text += "\n".join(
                 file_reader.apply(lambda row: ', '.join(row.values.astype(str)), axis=1))
-
+        
     if(uploadedFiles and text):
         st.success("Successfully uploaded files")
 
-    if(len(text) != 0):
-        with st.spinner('Creating chunks...'):
-            text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=500,
-                chunk_overlap=20,
-                length_function=len
-            )
-            chunks = text_splitter.split_text(text=text)
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=200,
+            length_function=len
+        )
+        chunks = text_splitter.split_text(text=text)
 
-        # # embeddings
+        # Embeddings
+        embeddings = OpenAIEmbeddings()
+        VectorStore = FAISS.from_texts(chunks, embedding=embeddings)
 
-            embeddings = OpenAIEmbeddings()
-            VectorStore = FAISS.from_texts(chunks, embedding=embeddings)
-
-        # Accept user questions/query
-        query = st.text_input("Ask questions about your file:")
+        #Accept user questions
+        query = st.text_input("Ask question about your PDF file:")
 
         if query:
             k = 10  # Number of nearest neighbors to retrieve
