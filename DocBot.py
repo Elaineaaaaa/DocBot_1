@@ -78,7 +78,6 @@ def main():
             response = chain.run(input_documents=docs, question=query)
             st.divider()
             st.subheader("Answer: ")
-
             st.write(response)
             st.divider()
 
