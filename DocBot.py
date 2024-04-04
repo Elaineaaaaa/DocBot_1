@@ -1,7 +1,6 @@
 import streamlit as st
 import os
 import pandas
-from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -25,8 +24,14 @@ with st.sidebar:
 
 def main():
     st.header("DocBot - Chat with your Files")
-    load_dotenv()
-    uploadedFiles = st.file_uploader("Upload your files", type=['pdf','csv','xlsx','.xls'], accept_multiple_files = True)
+    openaikey = None
+    openaikey = st.text_input("Your OpenAI API key: ", type="password")
+    os.environ["OPENAI_API_KEY"] = openaikey
+    if(openaikey == None or openaikey == ""):
+        visible = True
+    else:
+        visible = False
+    uploadedFiles = st.file_uploader("Upload your files", type=['pdf','csv','xlsx','.xls'], accept_multiple_files = True, disabled=visible)
     # Upload file
     text = ""
     for file in uploadedFiles:
