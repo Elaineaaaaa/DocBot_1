@@ -1,7 +1,6 @@
 import os
 import streamlit as st
 import pandas
-import docx
 from PyPDF2 import PdfReader
 from langchain.chat_models import ChatOpenAI
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -58,10 +57,6 @@ def main():
             file_reader = pandas.read_excel(file)
             text += "\n".join(
                 file_reader.apply(lambda row: ', '.join(row.values.astype(str)), axis=1))
-        elif(extension == "ocx"):
-            file_reader = docx.Document(file)
-            list = [paragraph.text for paragraph in file_reader.paragraphs]
-            text += ' '.join(list)
 
     if(uploadedFiles and text):
         st.success("Successfully uploaded files")
