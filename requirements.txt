@@ -13,3 +13,7 @@ pandas
 python-docx
 openpyxl
 xlrd
+fastapi
+uvicorn
+requests
+python-multipart
