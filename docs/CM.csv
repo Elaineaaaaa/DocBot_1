@@ -1,0 +1,17 @@
+﻿,Endproduct,Hourly Production
+MCM,Cut Tube,20
+SCM,Cut Tube,40
+LCM,Cut Tube,60
+SHM,Hydroformed part,12
+LHM,Hydroformed part,60
+MWM,Frame,2
+SWM,Frame,8
+LWM,Frame,16
+MPM,Frame,3
+SPM,Frame,10
+LPM,Frame,20
+BI,Module,60
+BWB,Module,60
+BT,Pack,20
+AW,eBike,0.6
+AT,eBike,20
