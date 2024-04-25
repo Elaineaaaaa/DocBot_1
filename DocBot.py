@@ -1,6 +1,6 @@
 import streamlit as st
 import os
-import pandas as pd
+import pandas
 from datetime import datetime
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -9,6 +9,7 @@ from langchain.vectorstores import FAISS
 from langchain.llms import OpenAI
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chat_models import ChatOpenAI
+from langchain.document_loaders.csv_loader import CSVLoader
 
 # Sidebar contents
 with st.sidebar:
@@ -29,48 +30,56 @@ def main():
     current_hour = datetime.now().hour
     if current_hour < 12:
         st.subheader("Good morning! 😃")
-    elif current_hour >= 18:
-        st.subheader("Good evening! 🌙")
-    else:
+    elif current_hour < 18:
         st.subheader("Good afternoon! 😊")
+    else:
+        st.subheader("Good evening! 🌙")
     
-    openaikey = st.text_input("Enter your OpenAI API key to get started:", type="password", help="This key stays private and is necessary for processing your files.")
-    if not openaikey:
-        st.warning("Please enter your OpenAI API key to proceed.")
-        return  # Stop execution
+    st.write("Upload your documents, and I'll help you understand them.")
 
+    openaikey = st.text_input("Enter your OpenAI API key to get started:", type="password", help="This key stays private and is necessary for processing your files.")
     os.environ["OPENAI_API_KEY"] = openaikey
 
-    # Initialize variables
-    documents = []
-    text = ""
-    
-    # Create a List of Documents from all of our files in the ./docs folder
-    docs_folder = "docs"
-    if not os.path.exists(docs_folder):
-        st.error("The documents folder does not exist.")
+    if not openaikey:
+        st.warning("Please enter your OpenAI API key to proceed.")
+        st.stop()
+
+    uploadedFiles = st.file_uploader("Upload your PDF or CSV files:", type=['pdf', 'csv', 'xlsx', '.xls'], accept_multiple_files=True)
+    if not uploadedFiles:
+        st.info("Awaiting file uploads. Please upload any PDF or CSV files you'd like to query.")
         return
 
-    for file_name in os.listdir(docs_folder):
-        file_path = os.path.join(docs_folder, file_name)
-        extension = file_name.split('.')[-1].lower()
-        if extension == 'pdf':
-            with open(file_path, "rb") as f:
-                file_reader = PdfReader(f)
-                for page in file_reader.pages:
-                    text += page.extract_text() or " "  # Handle pages where text extraction fails
-        elif extension in ["csv", "xlsx", "xls"]:
-            df = pd.read_csv(file_path) if extension == "csv" else pd.read_excel(file_path)
-            text += "\n".join(df.apply(lambda row: ', '.join(map(str, row.values)), axis=1))
-    
-    if text:
+    text = ""
+    for file in uploadedFiles:
+        extension = file.name[len(file.name)-3:]
+        if (extension == 'pdf'):
+            file_reader = PdfReader(file)
+            for page in file_reader.pages:
+                text += page.extract_text() or " "  # Handle pages where text extraction fails
+        elif(extension == "csv"):
+            file_reader = pandas.read_csv(file)
+            text += "\n".join(
+                file_reader.apply(lambda row: ', '.join(row.values.astype(str)), axis=1))
+        elif(extension == "lsx" or extension == "xls"):
+            file_reader = pandas.read_excel(file)
+            text += "\n".join(
+                file_reader.apply(lambda row: ', '.join(row.values.astype(str)), axis=1))
+
+
+    if (uploadedFiles and text):
         st.success("Files successfully uploaded and processed!")
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200, length_function=len)
+        
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=200,
+            length_function=len
+        )
         chunks = text_splitter.split_text(text=text)
         embeddings = OpenAIEmbeddings()
         VectorStore = FAISS.from_texts(chunks, embedding=embeddings)
 
         query = st.text_input("What would you like to know about your documents?", placeholder="Type your question here...")
+
         if query:
             distances, labels = [], []
             docs = VectorStore.similarity_search(query=query, k=10, distances=distances, labels=labels)
@@ -84,5 +93,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
